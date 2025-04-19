@@ -1,7 +1,8 @@
 <?php
 
-// Path ke file JSON untuk menyimpan data mapping id dan url
+// Konstanta path ke file JSON dan base URL shortener
 define('DATA_FILE', 'data.json');
+define('BASE_URL', 's.apipedia.id');
 
 // Fungsi untuk membaca data dari file JSON
 function getData() {
@@ -17,10 +18,17 @@ function saveData($data) {
     file_put_contents(DATA_FILE, json_encode($data, JSON_PRETTY_PRINT));
 }
 
-// Mengecek apakah request menggunakan parameter 'id' dan 'url'
+// Cek apakah request menggunakan parameter 'id' dan 'url'
 if (isset($_GET['id']) && isset($_GET['url'])) {
-    $id = $_GET['id'];
-    $url = $_GET['url'];
+    // Sanitize input
+    $id = htmlspecialchars(trim($_GET['id']));
+    $url = filter_var(trim($_GET['url']), FILTER_SANITIZE_URL);
+
+    // Validasi URL
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        echo "URL tidak valid.";
+        exit;
+    }
 
     // Ambil data yang ada
     $data = getData();
@@ -32,16 +40,16 @@ if (isset($_GET['id']) && isset($_GET['url'])) {
     saveData($data);
 
     // Tampilkan response seperti yang diinginkan
-    echo "s.apipedia.id?r=$id";
-    
+    echo BASE_URL . "?r=$id";
+
 } elseif (isset($_GET['r'])) {
     // Jika parameter 'r' ada, kita cari URL berdasarkan 'r'
-    $r = $_GET['r'];
+    $r = htmlspecialchars(trim($_GET['r']));
     $data = getData();
 
     // Periksa apakah 'r' ada dalam data
     if (isset($data[$r])) {
-        // Arahkan ke URL yang sesuai
+        // Redirect ke URL yang sesuai
         header("Location: " . $data[$r]);
         exit;
     } else {
